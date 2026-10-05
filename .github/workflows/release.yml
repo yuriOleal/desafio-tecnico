@@ -1,0 +1,49 @@
+name: Release (executáveis)
+
+# Gera os executáveis para Windows e Linux.
+#  - Ao criar uma tag (ex.: git tag v1.0.0 && git push --tags), anexa os arquivos à Release.
+#  - Também pode ser disparado manualmente (Actions > Release > Run workflow);
+#    nesse caso os arquivos ficam disponíveis como "artifacts" da execução.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, plataforma: windows, ext: ".exe" }
+          - { os: ubuntu-latest, plataforma: linux, ext: "" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Instalar
+        run: pip install -e ".[build]"
+      - name: Gerar executáveis
+        run: python scripts/build.py
+      - name: Nomear arquivos por plataforma
+        shell: bash
+        run: |
+          mkdir release
+          cp "dist/desafio${{ matrix.ext }}" "release/desafio-${{ matrix.plataforma }}${{ matrix.ext }}"
+          cp "dist/desafio-gui${{ matrix.ext }}" "release/desafio-gui-${{ matrix.plataforma }}${{ matrix.ext }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: executaveis-${{ matrix.plataforma }}
+          path: release/*
+      - name: Anexar à Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
