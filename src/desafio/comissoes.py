@@ -92,8 +92,10 @@ def parse_vendas(conteudo: str) -> list[Venda]:
 
     vendas = []
     for posicao, item in enumerate(dados["vendas"], start=1):
-        if not isinstance(item, dict) or isinstance(item.get("valor"), bool) or not isinstance(
-            item.get("valor"), (int, Decimal)
+        if (
+            not isinstance(item, dict)
+            or isinstance(item.get("valor"), bool)
+            or not isinstance(item.get("valor"), (int, Decimal))
         ):
             raise DadosInvalidosError(
                 f"Venda #{posicao} inválida: esperado {{'vendedor': str, 'valor': número}}."
